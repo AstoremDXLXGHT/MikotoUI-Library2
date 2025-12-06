@@ -1,37 +1,53 @@
+local MikotoUI_LIB_CODE = [[
 --[[
-    UILibrary v1.0
-    Librería universal para crear interfaces de usuario en Roblox
-    Compatible con cualquier executor que soporte loadstring
-]]
+ Mikoto Delight UI Library - Universal Executor Edition
+ Creada por Mikoto Delight
+ Versión: 1.0.0
+ ¡Tu visión, tu responsabilidad, mi código!
+]]--
 
-local UILibrary = {}
+local MikotoUI = {}
+MikotoUI.Config = {
+    PrimaryColor = Color3.fromRGB(18, 18, 18),         -- Fondo principal oscuro
+    SecondaryColor = Color3.fromRGB(28, 28, 28),       -- Fondo de secciones/elementos
+    AccentColor = Color3.fromRGB(0, 200, 0),          -- Verde brillante para acentos
+    TextColor = Color3.fromRGB(220, 220, 220),         -- Texto blanco/gris claro
+    BorderColor = Color3.fromRGB(0, 150, 0),          -- Borde sutil verde
+    TitleTextColor = Color3.fromRGB(0, 220, 0),       -- Texto del título más brillante
+    FontSize = 14,
+    Font = Enum.Font.SourceSansPro,
+    CornerRadius = UDim.new(0, 6),                    -- Bordes ligeramente redondeados
+    Padding = 8,                                      -- Espaciado interno
+    ElementHeight = 28,                               -- Altura base de los elementos
+    HeaderHeight = 32,                                -- Altura de los encabezados de sección
+    WindowSize = UDim2.new(0, 260, 0, 400),           -- Tamaño predeterminado de la ventana
+    WindowPosition = UDim2.new(0.5, -130, 0.5, -200)  -- Posición centrada
+}
 
--- Servicios
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
+MikotoUI.Elements = {} -- Almacena referencias a elementos UI para fácil acceso
+MikotoUI.ActiveWindow = nil
 
--- Utilidades
-local function tween(object, properties, duration)
-    local tweenInfo = TweenInfo.new(duration or 0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(object, tweenInfo, properties)
-    tween:Play()
-    return tween
-end
+--region -- Helpers & Utility Functions --
 
-local function makeDraggable(frame, dragHandle)
-    local dragging = false
-    local dragInput, mousePos, framePos
-    
-    dragHandle = dragHandle or frame
-    
-    dragHandle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+-- Función para hacer un frame arrastrable
+local function MakeDraggable(frame)
+    local dragging
+    local dragInput
+    local dragStart
+    local startPosition
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPosition.X.Scale, startPosition.X.Offset + delta.X,
+                                    startPosition.Y.Scale, startPosition.Y.Offset + delta.Y)
+    end
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
-            mousePos = input.Position
-            framePos = frame.Position
-            
+            dragStart = input.Position
+            startPosition = frame.Position
+
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -39,522 +55,568 @@ local function makeDraggable(frame, dragHandle)
             end)
         end
     end)
-    
-    dragHandle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if dragging then
+                update(input)
+            end
         end
     end)
-    
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - mousePos
-            tween(frame, {
-                Position = UDim2.new(
-                    framePos.X.Scale,
-                    framePos.X.Offset + delta.X,
-                    framePos.Y.Scale,
-                    framePos.Y.Offset + delta.Y
-                )
-            }, 0.1)
+
+    frame.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
         end
     end)
 end
 
--- Función principal para crear ventana
-function UILibrary:CreateWindow(config)
-    config = config or {}
-    local windowName = config.Name or "UI Library"
-    local windowSize = config.Size or UDim2.new(0, 500, 0, 400)
-    
-    -- Crear ScreenGui
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "UILibrary_" .. math.random(1000, 9999)
-    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    screenGui.ResetOnSpawn = false
-    
-    -- Proteger GUI si es posible
-    pcall(function()
-        screenGui.Parent = CoreGui
+-- Función para crear un TextButton genérico con estilo
+local function CreateStyledButton(parent, text, callback, customHeight)
+    local btn = Instance.new("TextButton")
+    btn.Parent = parent
+    btn.Size = UDim2.new(1, 0, 0, customHeight or MikotoUI.Config.ElementHeight)
+    btn.BackgroundColor3 = MikotoUI.Config.SecondaryColor
+    btn.TextColor3 = MikotoUI.Config.TextColor
+    btn.Font = MikotoUI.Config.Font
+    btn.TextSize = MikotoUI.Config.FontSize
+    btn.Text = text
+    btn.TextScaled = false
+    btn.AutoButtonColor = false
+    btn.BorderColor3 = MikotoUI.Config.BorderColor
+    btn.BorderSizePixel = 1
+
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = MikotoUI.Config.CornerRadius
+    uiCorner.Parent = btn
+
+    local initialColor = MikotoUI.Config.SecondaryColor
+    local hoverColor = MikotoUI.Config.AccentColor * 0.5 -- Un verde más oscuro para el hover
+
+    btn.MouseEnter:Connect(function()
+        btn:TweenBackgroundColor3(hoverColor, "Out", "Quad", 0.15, true)
     end)
-    
-    if screenGui.Parent ~= CoreGui then
-        screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    btn.MouseLeave:Connect(function()
+        btn:TweenBackgroundColor3(initialColor, "Out", "Quad", 0.15, true)
+    end)
+
+    if callback then
+        btn.MouseButton1Click:Connect(callback)
     end
-    
-    -- Frame principal
+    return btn
+end
+
+--endregion
+
+--region -- Core UI Elements --
+
+--- Crea la ventana principal de la UI.
+-- @param title string El título de la ventana.
+-- @return Frame La ventana principal creada.
+function MikotoUI.CreateWindow(title)
+    if MikotoUI.ActiveWindow then
+        MikotoUI.ActiveWindow:Destroy()
+        MikotoUI.ActiveWindow = nil
+    end
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "MikotoUIDeliverable"
+    screenGui.Parent = game:GetService("CoreGui") -- Para ser universal y persistente
+    screenGui.ResetOnSpawn = false
+
     local mainFrame = Instance.new("Frame")
-    mainFrame.Name = "MainFrame"
-    mainFrame.Size = windowSize
-    mainFrame.Position = UDim2.new(0.5, -windowSize.X.Offset/2, 0.5, -windowSize.Y.Offset/2)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    mainFrame.BorderSizePixel = 0
+    mainFrame.Name = "MainWindow"
     mainFrame.Parent = screenGui
-    
-    local mainCorner = Instance.new("UICorner")
-    mainCorner.CornerRadius = UDim.new(0, 8)
-    mainCorner.Parent = mainFrame
-    
-    -- Sombra
-    local shadow = Instance.new("ImageLabel")
-    shadow.Name = "Shadow"
-    shadow.BackgroundTransparency = 1
-    shadow.Position = UDim2.new(0, -15, 0, -15)
-    shadow.Size = UDim2.new(1, 30, 1, 30)
-    shadow.ZIndex = 0
-    shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
-    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    shadow.ImageTransparency = 0.5
-    shadow.Parent = mainFrame
-    
-    -- Barra de título
+    mainFrame.Size = MikotoUI.Config.WindowSize
+    mainFrame.Position = MikotoUI.Config.WindowPosition
+    mainFrame.BackgroundColor3 = MikotoUI.Config.PrimaryColor
+    mainFrame.BorderColor3 = MikotoUI.Config.BorderColor
+    mainFrame.BorderSizePixel = 2
+    mainFrame.ClipsDescendants = true -- Para que los elementos desplegables no se salgan del marco principal
+
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = MikotoUI.Config.CornerRadius
+    uiCorner.Parent = mainFrame
+
+    local uiPadding = Instance.new("UIPadding")
+    uiPadding.PaddingTop = UDim.new(0, MikotoUI.Config.Padding)
+    uiPadding.PaddingBottom = UDim.new(0, MikotoUI.Config.Padding)
+    uiPadding.PaddingLeft = UDim.new(0, MikotoUI.Config.Padding)
+    uiPadding.PaddingRight = UDim.new(0, MikotoUI.Config.Padding)
+    uiPadding.Parent = mainFrame
+
+    -- Title Bar
     local titleBar = Instance.new("Frame")
     titleBar.Name = "TitleBar"
-    titleBar.Size = UDim2.new(1, 0, 0, 40)
-    titleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    titleBar.BorderSizePixel = 0
     titleBar.Parent = mainFrame
+    titleBar.Size = UDim2.new(1, 0, 0, MikotoUI.Config.HeaderHeight)
+    titleBar.Position = UDim2.new(0, 0, 0, 0)
+    titleBar.BackgroundColor3 = MikotoUI.Config.SecondaryColor
+    titleBar.BorderColor3 = MikotoUI.Config.BorderColor
+    titleBar.BorderSizePixel = 1
     
-    local titleCorner = Instance.new("UICorner")
-    titleCorner.CornerRadius = UDim.new(0, 8)
-    titleCorner.Parent = titleBar
+    local titleText = Instance.new("TextLabel")
+    titleText.Name = "TitleText"
+    titleText.Parent = titleBar
+    titleText.Size = UDim2.new(1, - MikotoUI.Config.HeaderHeight, 1, 0) -- Espacio para el botón de toggle
+    titleText.Position = UDim2.new(0, 0, 0, 0)
+    titleText.BackgroundColor3 = MikotoUI.Config.SecondaryColor
+    titleText.BackgroundTransparency = 1
+    titleText.TextColor3 = MikotoUI.Config.TitleTextColor
+    titleText.Font = MikotoUI.Config.Font
+    titleText.TextSize = MikotoUI.Config.FontSize + 2 -- Un poco más grande
+    titleText.Text = title or "Mikoto UI"
+    titleText.TextXAlignment = Enum.TextXAlignment.Left
+    titleText.TextScaled = false
+    titleText.TextWrapped = true
     
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Size = UDim2.new(1, -50, 1, 0)
-    titleLabel.Position = UDim2.new(0, 15, 0, 0)
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Text = windowName
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.TextSize = 16
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.Parent = titleBar
-    
-    -- Botón de cerrar
-    local closeButton = Instance.new("TextButton")
-    closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 30, 0, 30)
-    closeButton.Position = UDim2.new(1, -35, 0, 5)
-    closeButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-    closeButton.BorderSizePixel = 0
-    closeButton.Text = "×"
-    closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    closeButton.TextSize = 20
-    closeButton.Font = Enum.Font.GothamBold
-    closeButton.Parent = titleBar
-    
-    local closeCorner = Instance.new("UICorner")
-    closeCorner.CornerRadius = UDim.new(0, 6)
-    closeCorner.Parent = closeButton
-    
-    closeButton.MouseButton1Click:Connect(function()
-        tween(mainFrame, {Size = UDim2.new(0, 0, 0, 0)}, 0.3)
-        wait(0.3)
-        screenGui:Destroy()
+    local titlePadding = Instance.new("UIPadding")
+    titlePadding.PaddingLeft = UDim.new(0, MikotoUI.Config.Padding)
+    titlePadding.Parent = titleText
+
+    MakeDraggable(titleBar) -- Hacer la barra de título arrastrable
+
+    -- Content Frame para los elementos
+    local contentFrame = Instance.new("ScrollFrame")
+    contentFrame.Name = "ContentFrame"
+    contentFrame.Parent = mainFrame
+    contentFrame.BackgroundTransparency = 1
+    contentFrame.Size = UDim2.new(1, 0, 1, -(MikotoUI.Config.HeaderHeight + MikotoUI.Config.Padding * 2)) -- Ajustar tamaño
+    contentFrame.Position = UDim2.new(0, 0, 0, MikotoUI.Config.HeaderHeight + MikotoUI.Config.Padding)
+    contentFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Se ajustará con UIListLayout
+    contentFrame.ScrollBarImageColor3 = MikotoUI.Config.AccentColor
+    contentFrame.ScrollBarTransparency = 0.5
+    contentFrame.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
+
+    local uiListLayout = Instance.new("UIListLayout")
+    uiListLayout.Parent = contentFrame
+    uiListLayout.FillDirection = Enum.FillDirection.Vertical
+    uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    uiListLayout.Padding = UDim.new(0, MikotoUI.Config.Padding)
+
+    -- Toggle Button (para ocultar/mostrar todo el contenido)
+    local toggleButton = Instance.new("TextButton")
+    toggleButton.Name = "ToggleContentButton"
+    toggleButton.Parent = titleBar
+    toggleButton.Size = UDim2.new(0, MikotoUI.Config.HeaderHeight, 1, 0)
+    toggleButton.Position = UDim2.new(1, -MikotoUI.Config.HeaderHeight, 0, 0)
+    toggleButton.BackgroundColor3 = MikotoUI.Config.PrimaryColor
+    toggleButton.BorderColor3 = MikotoUI.Config.BorderColor
+    toggleButton.BorderSizePixel = 1
+    toggleButton.TextColor3 = MikotoUI.Config.AccentColor
+    toggleButton.Font = MikotoUI.Config.Font
+    toggleButton.TextSize = MikotoUI.Config.FontSize
+    toggleButton.Text = "─" -- Ocultar
+    toggleButton.AutoButtonColor = false
+
+    local uiCornerBtn = Instance.new("UICorner")
+    uiCornerBtn.CornerRadius = MikotoUI.Config.CornerRadius
+    uiCornerBtn.Parent = toggleButton
+
+    local contentVisible = true
+    toggleButton.MouseButton1Click:Connect(function()
+        contentVisible = not contentVisible
+        contentFrame.Visible = contentVisible
+        toggleButton.Text = contentVisible and "─" or "+"
+        -- Ajustar el tamaño del mainFrame cuando el contenido se oculta/muestra
+        if contentVisible then
+             mainFrame:TweenSize(MikotoUI.Config.WindowSize, "Out", "Quad", 0.2, true)
+        else
+            mainFrame:TweenSize(UDim2.new(MikotoUI.Config.WindowSize.X.Scale, MikotoUI.Config.WindowSize.X.Offset, 0, MikotoUI.Config.HeaderHeight + (MikotoUI.Config.Padding * 2)), "Out", "Quad", 0.2, true)
+        end
     end)
     
-    closeButton.MouseEnter:Connect(function()
-        tween(closeButton, {BackgroundColor3 = Color3.fromRGB(255, 80, 80)}, 0.2)
-    end)
-    
-    closeButton.MouseLeave:Connect(function()
-        tween(closeButton, {BackgroundColor3 = Color3.fromRGB(255, 60, 60)}, 0.2)
-    end)
-    
-    -- Container de pestañas
-    local tabContainer = Instance.new("Frame")
-    tabContainer.Name = "TabContainer"
-    tabContainer.Size = UDim2.new(0, 120, 1, -50)
-    tabContainer.Position = UDim2.new(0, 10, 0, 45)
-    tabContainer.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    tabContainer.BorderSizePixel = 0
-    tabContainer.Parent = mainFrame
-    
-    local tabCorner = Instance.new("UICorner")
-    tabCorner.CornerRadius = UDim.new(0, 6)
-    tabCorner.Parent = tabContainer
-    
-    local tabLayout = Instance.new("UIListLayout")
-    tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    tabLayout.Padding = UDim.new(0, 5)
-    tabLayout.Parent = tabContainer
-    
-    local tabPadding = Instance.new("UIPadding")
-    tabPadding.PaddingTop = UDim.new(0, 5)
-    tabPadding.PaddingLeft = UDim.new(0, 5)
-    tabPadding.PaddingRight = UDim.new(0, 5)
-    tabPadding.Parent = tabContainer
-    
-    -- Container de contenido
-    local contentContainer = Instance.new("Frame")
-    contentContainer.Name = "ContentContainer"
-    contentContainer.Size = UDim2.new(1, -145, 1, -50)
-    contentContainer.Position = UDim2.new(0, 135, 0, 45)
-    contentContainer.BackgroundTransparency = 1
-    contentContainer.Parent = mainFrame
-    
-    -- Hacer draggable
-    makeDraggable(mainFrame, titleBar)
-    
-    -- Animación de entrada
-    mainFrame.Size = UDim2.new(0, 0, 0, 0)
-    tween(mainFrame, {Size = windowSize}, 0.4)
-    
-    local Window = {}
-    Window.Tabs = {}
-    Window.CurrentTab = nil
-    
-    function Window:CreateTab(tabName)
-        local Tab = {}
-        Tab.Name = tabName
-        Tab.Elements = {}
-        
-        -- Botón de pestaña
-        local tabButton = Instance.new("TextButton")
-        tabButton.Name = tabName
-        tabButton.Size = UDim2.new(1, 0, 0, 35)
-        tabButton.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-        tabButton.BorderSizePixel = 0
-        tabButton.Text = tabName
-        tabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-        tabButton.TextSize = 14
-        tabButton.Font = Enum.Font.Gotham
-        tabButton.Parent = tabContainer
-        
-        local buttonCorner = Instance.new("UICorner")
-        buttonCorner.CornerRadius = UDim.new(0, 5)
-        buttonCorner.Parent = tabButton
-        
-        -- Contenido de la pestaña
-        local tabContent = Instance.new("ScrollingFrame")
-        tabContent.Name = tabName .. "Content"
-        tabContent.Size = UDim2.new(1, 0, 1, 0)
-        tabContent.BackgroundTransparency = 1
-        tabContent.BorderSizePixel = 0
-        tabContent.ScrollBarThickness = 4
-        tabContent.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 90)
-        tabContent.Visible = false
-        tabContent.Parent = contentContainer
-        
-        local contentLayout = Instance.new("UIListLayout")
-        contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
-        contentLayout.Padding = UDim.new(0, 8)
-        contentLayout.Parent = tabContent
-        
-        local contentPadding = Instance.new("UIPadding")
-        contentPadding.PaddingTop = UDim.new(0, 5)
-        contentPadding.PaddingLeft = UDim.new(0, 5)
-        contentPadding.PaddingRight = UDim.new(0, 5)
-        contentPadding.Parent = tabContent
-        
-        tabButton.MouseButton1Click:Connect(function()
-            for _, tab in pairs(Window.Tabs) do
-                tab.Content.Visible = false
-                tween(tab.Button, {BackgroundColor3 = Color3.fromRGB(35, 35, 45), TextColor3 = Color3.fromRGB(200, 200, 200)}, 0.2)
-            end
-            
-            tabContent.Visible = true
-            Window.CurrentTab = Tab
-            tween(tabButton, {BackgroundColor3 = Color3.fromRGB(60, 120, 220), TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.2)
-        end)
-        
-        tabButton.MouseEnter:Connect(function()
-            if Window.CurrentTab ~= Tab then
-                tween(tabButton, {BackgroundColor3 = Color3.fromRGB(45, 45, 55)}, 0.2)
-            end
-        end)
-        
-        tabButton.MouseLeave:Connect(function()
-            if Window.CurrentTab ~= Tab then
-                tween(tabButton, {BackgroundColor3 = Color3.fromRGB(35, 35, 45)}, 0.2)
-            end
-        end)
-        
-        Tab.Button = tabButton
-        Tab.Content = tabContent
-        
-        -- Función para añadir botón
-        function Tab:AddButton(buttonConfig)
-            local buttonText = buttonConfig.Name or "Button"
-            local callback = buttonConfig.Callback or function() end
-            
-            local button = Instance.new("TextButton")
-            button.Name = buttonText
-            button.Size = UDim2.new(1, -10, 0, 35)
-            button.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-            button.BorderSizePixel = 0
-            button.Text = buttonText
-            button.TextColor3 = Color3.fromRGB(255, 255, 255)
-            button.TextSize = 14
-            button.Font = Enum.Font.Gotham
-            button.Parent = tabContent
-            
-            local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(0, 6)
-            btnCorner.Parent = button
-            
-            button.MouseButton1Click:Connect(callback)
-            
-            button.MouseEnter:Connect(function()
-                tween(button, {BackgroundColor3 = Color3.fromRGB(60, 120, 220)}, 0.2)
-            end)
-            
-            button.MouseLeave:Connect(function()
-                tween(button, {BackgroundColor3 = Color3.fromRGB(50, 50, 60)}, 0.2)
-            end)
-            
-            tabContent.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 10)
-            
-            return button
-        end
-        
-        -- Función para añadir toggle
-        function Tab:AddToggle(toggleConfig)
-            local toggleText = toggleConfig.Name or "Toggle"
-            local defaultValue = toggleConfig.Default or false
-            local callback = toggleConfig.Callback or function() end
-            
-            local toggleFrame = Instance.new("Frame")
-            toggleFrame.Name = toggleText
-            toggleFrame.Size = UDim2.new(1, -10, 0, 35)
-            toggleFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-            toggleFrame.BorderSizePixel = 0
-            toggleFrame.Parent = tabContent
-            
-            local toggleCorner = Instance.new("UICorner")
-            toggleCorner.CornerRadius = UDim.new(0, 6)
-            toggleCorner.Parent = toggleFrame
-            
-            local toggleLabel = Instance.new("TextLabel")
-            toggleLabel.Size = UDim2.new(1, -50, 1, 0)
-            toggleLabel.Position = UDim2.new(0, 10, 0, 0)
-            toggleLabel.BackgroundTransparency = 1
-            toggleLabel.Text = toggleText
-            toggleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            toggleLabel.TextSize = 14
-            toggleLabel.Font = Enum.Font.Gotham
-            toggleLabel.TextXAlignment = Enum.TextXAlignment.Left
-            toggleLabel.Parent = toggleFrame
-            
-            local toggleButton = Instance.new("TextButton")
-            toggleButton.Size = UDim2.new(0, 40, 0, 20)
-            toggleButton.Position = UDim2.new(1, -45, 0.5, -10)
-            toggleButton.BackgroundColor3 = defaultValue and Color3.fromRGB(60, 220, 120) or Color3.fromRGB(80, 80, 90)
-            toggleButton.BorderSizePixel = 0
-            toggleButton.Text = ""
-            toggleButton.Parent = toggleFrame
-            
-            local toggleBtnCorner = Instance.new("UICorner")
-            toggleBtnCorner.CornerRadius = UDim.new(1, 0)
-            toggleBtnCorner.Parent = toggleButton
-            
-            local toggleIndicator = Instance.new("Frame")
-            toggleIndicator.Size = UDim2.new(0, 16, 0, 16)
-            toggleIndicator.Position = defaultValue and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-            toggleIndicator.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            toggleIndicator.BorderSizePixel = 0
-            toggleIndicator.Parent = toggleButton
-            
-            local indicatorCorner = Instance.new("UICorner")
-            indicatorCorner.CornerRadius = UDim.new(1, 0)
-            indicatorCorner.Parent = toggleIndicator
-            
-            local toggled = defaultValue
-            
-            toggleButton.MouseButton1Click:Connect(function()
-                toggled = not toggled
-                
-                tween(toggleButton, {
-                    BackgroundColor3 = toggled and Color3.fromRGB(60, 220, 120) or Color3.fromRGB(80, 80, 90)
-                }, 0.2)
-                
-                tween(toggleIndicator, {
-                    Position = toggled and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-                }, 0.2)
-                
-                callback(toggled)
-            end)
-            
-            tabContent.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 10)
-            
-            local Toggle = {}
-            function Toggle:Set(value)
-                toggled = value
-                tween(toggleButton, {
-                    BackgroundColor3 = value and Color3.fromRGB(60, 220, 120) or Color3.fromRGB(80, 80, 90)
-                }, 0.2)
-                tween(toggleIndicator, {
-                    Position = value and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)
-                }, 0.2)
-                callback(value)
-            end
-            
-            return Toggle
-        end
-        
-        -- Función para añadir slider
-        function Tab:AddSlider(sliderConfig)
-            local sliderText = sliderConfig.Name or "Slider"
-            local min = sliderConfig.Min or 0
-            local max = sliderConfig.Max or 100
-            local default = sliderConfig.Default or min
-            local callback = sliderConfig.Callback or function() end
-            
-            local sliderFrame = Instance.new("Frame")
-            sliderFrame.Name = sliderText
-            sliderFrame.Size = UDim2.new(1, -10, 0, 50)
-            sliderFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-            sliderFrame.BorderSizePixel = 0
-            sliderFrame.Parent = tabContent
-            
-            local sliderCorner = Instance.new("UICorner")
-            sliderCorner.CornerRadius = UDim.new(0, 6)
-            sliderCorner.Parent = sliderFrame
-            
-            local sliderLabel = Instance.new("TextLabel")
-            sliderLabel.Size = UDim2.new(1, -20, 0, 20)
-            sliderLabel.Position = UDim2.new(0, 10, 0, 5)
-            sliderLabel.BackgroundTransparency = 1
-            sliderLabel.Text = sliderText
-            sliderLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-            sliderLabel.TextSize = 14
-            sliderLabel.Font = Enum.Font.Gotham
-            sliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-            sliderLabel.Parent = sliderFrame
-            
-            local valueLabel = Instance.new("TextLabel")
-            valueLabel.Size = UDim2.new(0, 50, 0, 20)
-            valueLabel.Position = UDim2.new(1, -60, 0, 5)
-            valueLabel.BackgroundTransparency = 1
-            valueLabel.Text = tostring(default)
-            valueLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-            valueLabel.TextSize = 13
-            valueLabel.Font = Enum.Font.Gotham
-            valueLabel.TextXAlignment = Enum.TextXAlignment.Right
-            valueLabel.Parent = sliderFrame
-            
-            local sliderTrack = Instance.new("Frame")
-            sliderTrack.Size = UDim2.new(1, -20, 0, 6)
-            sliderTrack.Position = UDim2.new(0, 10, 1, -15)
-            sliderTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-            sliderTrack.BorderSizePixel = 0
-            sliderTrack.Parent = sliderFrame
-            
-            local trackCorner = Instance.new("UICorner")
-            trackCorner.CornerRadius = UDim.new(1, 0)
-            trackCorner.Parent = sliderTrack
-            
-            local sliderFill = Instance.new("Frame")
-            sliderFill.Size = UDim2.new((default - min) / (max - min), 0, 1, 0)
-            sliderFill.BackgroundColor3 = Color3.fromRGB(60, 120, 220)
-            sliderFill.BorderSizePixel = 0
-            sliderFill.Parent = sliderTrack
-            
-            local fillCorner = Instance.new("UICorner")
-            fillCorner.CornerRadius = UDim.new(1, 0)
-            fillCorner.Parent = sliderFill
-            
-            local sliderButton = Instance.new("TextButton")
-            sliderButton.Size = UDim2.new(0, 14, 0, 14)
-            sliderButton.Position = UDim2.new((default - min) / (max - min), -7, 0.5, -7)
-            sliderButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            sliderButton.BorderSizePixel = 0
-            sliderButton.Text = ""
-            sliderButton.Parent = sliderTrack
-            
-            local btnCorner = Instance.new("UICorner")
-            btnCorner.CornerRadius = UDim.new(1, 0)
-            btnCorner.Parent = sliderButton
-            
-            local dragging = false
-            local currentValue = default
-            
-            local function updateSlider(input)
-                local pos = math.clamp((input.Position.X - sliderTrack.AbsolutePosition.X) / sliderTrack.AbsoluteSize.X, 0, 1)
-                currentValue = math.floor(min + (max - min) * pos)
-                
-                valueLabel.Text = tostring(currentValue)
-                
-                tween(sliderFill, {Size = UDim2.new(pos, 0, 1, 0)}, 0.1)
-                tween(sliderButton, {Position = UDim2.new(pos, -7, 0.5, -7)}, 0.1)
-                
-                callback(currentValue)
-            end
-            
-            sliderButton.MouseButton1Down:Connect(function()
-                dragging = true
-            end)
-            
-            UserInputService.InputEnded:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    dragging = false
-                end
-            end)
-            
-            UserInputService.InputChanged:Connect(function(input)
-                if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                    updateSlider(input)
-                end
-            end)
-            
-            sliderTrack.InputBegan:Connect(function(input)
-                if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    updateSlider(input)
-                end
-            end)
-            
-            tabContent.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 10)
-            
-            local Slider = {}
-            function Slider:Set(value)
-                currentValue = math.clamp(value, min, max)
-                local pos = (currentValue - min) / (max - min)
-                valueLabel.Text = tostring(currentValue)
-                tween(sliderFill, {Size = UDim2.new(pos, 0, 1, 0)}, 0.2)
-                tween(sliderButton, {Position = UDim2.new(pos, -7, 0.5, -7)}, 0.2)
-                callback(currentValue)
-            end
-            
-            return Slider
-        end
-        
-        -- Función para añadir label
-        function Tab:AddLabel(text)
-            local label = Instance.new("TextLabel")
-            label.Name = "Label"
-            label.Size = UDim2.new(1, -10, 0, 30)
-            label.BackgroundTransparency = 1
-            label.Text = text
-            label.TextColor3 = Color3.fromRGB(200, 200, 200)
-            label.TextSize = 14
-            label.Font = Enum.Font.Gotham
-            label.TextXAlignment = Enum.TextXAlignment.Left
-            label.TextWrapped = true
-            label.Parent = tabContent
-            
-            tabContent.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 10)
-            
-            local Label = {}
-            function Label:Set(newText)
-                label.Text = newText
-            end
-            
-            return Label
-        end
-        
-        table.insert(Window.Tabs, Tab)
-        
-        -- Seleccionar la primera pestaña automáticamente
-        if #Window.Tabs == 1 then
-            tabButton:Click()
-        end
-        
-        return Tab
-    end
-    
-    return Window
+    MikotoUI.Elements.MainWindow = mainFrame
+    MikotoUI.Elements.ContentFrame = contentFrame
+    MikotoUI.Elements.ScreenGui = screenGui
+    MikotoUI.ActiveWindow = mainFrame
+
+    return mainFrame
 end
 
-return UILibrary
+--- Crea una sección desplegable dentro de la ventana principal.
+-- @param title string El título de la sección.
+-- @return Frame El frame de contenido de la sección.
+function MikotoUI.CreateSection(title)
+    local parentFrame = MikotoUI.Elements.ContentFrame
+    if not parentFrame then
+        warn("MikotoUI: No se ha creado la ventana principal. Llama a MikotoUI.CreateWindow() primero.")
+        return nil
+    end
 
+    local sectionContainer = Instance.new("Frame")
+    sectionContainer.Name = "Section_" .. title:gsub("%s+", "_")
+    sectionContainer.Parent = parentFrame
+    sectionContainer.Size = UDim2.new(1, 0, 0, MikotoUI.Config.HeaderHeight) -- Inicialmente solo el header
+    sectionContainer.BackgroundTransparency = 1
+    sectionContainer.ClipsDescendants = true -- Para ocultar el contenido cuando está colapsado
+
+    local uiListLayout = Instance.new("UIListLayout")
+    uiListLayout.Parent = sectionContainer
+    uiListLayout.FillDirection = Enum.FillDirection.Vertical
+    uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    uiListLayout.Padding = UDim.new(0, MikotoUI.Config.Padding / 2)
+
+    local headerFrame = Instance.new("TextButton") -- Usamos TextButton para hacerlo clickeable
+    headerFrame.Name = "Header"
+    headerFrame.Parent = sectionContainer
+    headerFrame.Size = UDim2.new(1, 0, 0, MikotoUI.Config.HeaderHeight)
+    headerFrame.BackgroundColor3 = MikotoUI.Config.SecondaryColor
+    headerFrame.BorderColor3 = MikotoUI.Config.BorderColor
+    headerFrame.BorderSizePixel = 1
+    headerFrame.Text = "" -- No necesitamos texto aquí, usamos un TextLabel hijo
+
+    local headerCorner = Instance.new("UICorner")
+    headerCorner.CornerRadius = MikotoUI.Config.CornerRadius
+    headerCorner.Parent = headerFrame
+
+    local headerText = Instance.new("TextLabel")
+    headerText.Name = "HeaderText"
+    headerText.Parent = headerFrame
+    headerText.Size = UDim2.new(1, -MikotoUI.Config.HeaderHeight, 1, 0) -- Espacio para el indicador
+    headerText.Position = UDim2.new(0, 0, 0, 0)
+    headerText.BackgroundColor3 = MikotoUI.Config.SecondaryColor
+    headerText.BackgroundTransparency = 1
+    headerText.TextColor3 = MikotoUI.Config.TextColor
+    headerText.Font = MikotoUI.Config.Font
+    headerText.TextSize = MikotoUI.Config.FontSize
+    headerText.TextXAlignment = Enum.TextXAlignment.Left
+    headerText.Text = title
+    
+    local textPadding = Instance.new("UIPadding")
+    textPadding.PaddingLeft = UDim.new(0, MikotoUI.Config.Padding)
+    textPadding.Parent = headerText
+
+    local indicatorText = Instance.new("TextLabel")
+    indicatorText.Name = "Indicator"
+    indicatorText.Parent = headerFrame
+    indicatorText.Size = UDim2.new(0, MikotoUI.Config.HeaderHeight, 1, 0)
+    indicatorText.Position = UDim2.new(1, -MikotoUI.Config.HeaderHeight, 0, 0)
+    indicatorText.BackgroundColor3 = MikotoUI.Config.PrimaryColor
+    indicatorText.BackgroundTransparency = 1
+    indicatorText.TextColor3 = MikotoUI.Config.AccentColor
+    indicatorText.Font = Enum.Font.SourceSansProBold
+    indicatorText.TextSize = MikotoUI.Config.FontSize + 2
+    indicatorText.Text = "▼" -- Colapsado por defecto
+
+    local contentFrame = Instance.new("Frame")
+    contentFrame.Name = "Content"
+    contentFrame.Parent = sectionContainer
+    contentFrame.Size = UDim2.new(1, 0, 0, 0) -- Altura 0 inicialmente
+    contentFrame.BackgroundColor3 = MikotoUI.Config.PrimaryColor
+    contentFrame.BorderColor3 = MikotoUI.Config.BorderColor
+    contentFrame.BorderSizePixel = 1
+    contentFrame.Visible = false -- Oculto por defecto
+
+    local contentCorner = Instance.new("UICorner")
+    contentCorner.CornerRadius = MikotoUI.Config.CornerRadius
+    contentCorner.Parent = contentFrame
+
+    local contentLayout = Instance.new("UIListLayout")
+    contentLayout.Parent = contentFrame
+    contentLayout.FillDirection = Enum.FillDirection.Vertical
+    contentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    contentLayout.Padding = UDim.new(0, MikotoUI.Config.Padding / 2)
+
+    local contentPadding = Instance.new("UIPadding")
+    contentPadding.PaddingTop = UDim.new(0, MikotoUI.Config.Padding)
+    contentPadding.PaddingBottom = UDim.new(0, MikotoUI.Config.Padding)
+    contentPadding.PaddingLeft = UDim.new(0, MikotoUI.Config.Padding)
+    contentPadding.PaddingRight = UDim.new(0, MikotoUI.Config.Padding)
+    contentPadding.Parent = contentFrame
+
+    local isExpanded = false
+    local function updateSectionSize()
+        local desiredContentHeight = 0
+        if isExpanded then
+            contentFrame.Visible = true
+            contentLayout:SetAbsolutePosition(Vector2.new()) -- Force layout update
+            desiredContentHeight = contentLayout.AbsoluteContentSize.Y + (MikotoUI.Config.Padding * 2) -- Suma padding
+        end
+        
+        local targetSize = UDim2.new(1, 0, 0, MikotoUI.Config.HeaderHeight + (isExpanded and desiredContentHeight or 0))
+        sectionContainer:TweenSize(targetSize, "Out", "Quad", 0.2, true)
+        
+        if not isExpanded then
+            -- Pequeño delay para que la animación de tween se complete antes de ocultar
+            task.delay(0.2, function()
+                if not isExpanded then contentFrame.Visible = false end
+            end)
+        end
+    end
+
+    headerFrame.MouseButton1Click:Connect(function()
+        isExpanded = not isExpanded
+        indicatorText.Text = isExpanded and "▲" or "▼"
+        updateSectionSize()
+    end)
+
+    -- Para asegurar que el tamaño del contenido se actualiza cuando se añaden elementos
+    contentLayout.ChildAdded:Connect(updateSectionSize)
+    contentLayout.ChildRemoved:Connect(updateSectionSize)
+    
+    MikotoUI.Elements["Section_" .. title:gsub("%s+", "_")] = {
+        Container = sectionContainer,
+        Header = headerFrame,
+        Content = contentFrame,
+        IsExpanded = function() return isExpanded end,
+        RefreshLayout = updateSectionSize -- Para llamar manualmente si se necesita
+    }
+
+    return contentFrame
+end
+
+--endregion
+
+--region -- Controls --
+
+--- Crea un botón simple.
+-- @param parent Frame El frame padre donde se insertará el botón.
+-- @param text string El texto del botón.
+-- @param callback function (opcional) La función a ejecutar al hacer click.
+-- @return TextButton El botón creado.
+function MikotoUI.CreateButton(parent, text, callback)
+    return CreateStyledButton(parent, text, callback)
+end
+
+--- Crea un toggle (botón de encendido/apagado).
+-- @param parent Frame El frame padre.
+-- @param text string El texto del toggle.
+-- @param defaultState boolean (opcional) El estado inicial (true/false). Por defecto es false.
+-- @param callback function (opcional) La función a ejecutar al cambiar el estado. Recibe el nuevo estado (boolean).
+-- @return table Con el botón y una función para obtener/establecer el estado.
+function MikotoUI.CreateToggle(parent, text, defaultState, callback)
+    local state = defaultState or false
+    local toggleBtn = CreateStyledButton(parent, text .. ": " .. (state and "ON" or "OFF"), nil)
+    local initialColor = MikotoUI.Config.SecondaryColor
+    local onColor = MikotoUI.Config.AccentColor
+    local offColor = MikotoUI.Config.SecondaryColor
+
+    local function updateColor()
+        toggleBtn:TweenBackgroundColor3(state and onColor or offColor, "Out", "Quad", 0.15, true)
+    end
+    updateColor() -- Establecer color inicial
+
+    toggleBtn.MouseButton1Click:Connect(function()
+        state = not state
+        toggleBtn.Text = text .. ": " .. (state and "ON" or "OFF")
+        updateColor()
+        if callback then
+            callback(state)
+        end
+    end)
+
+    -- Sobrescribir los eventos de hover para que no interfieran con el color de estado
+    toggleBtn.MouseEnter:Connect(function()
+        toggleBtn:TweenBackgroundColor3(state and onColor  0.7 or offColor  1.5, "Out", "Quad", 0.15, true)
+    end)
+    toggleBtn.MouseLeave:Connect(function()
+        toggleBtn:TweenBackgroundColor3(state and onColor or offColor, "Out", "Quad", 0.15, true)
+    end)
+
+    return {
+        Button = toggleBtn,
+        GetState = function() return state end,
+        SetState = function(newState)
+            state = newState
+            toggleBtn.Text = text .. ": " .. (state and "ON" or "OFF")
+            updateColor()
+        end
+    }
+end
+
+
+--- Crea un slider (control deslizante).
+-- @param parent Frame El frame padre.
+-- @param text string El texto del slider.
+-- @param min number Valor mínimo.
+-- @param max number Valor máximo.
+-- @param initial number (opcional) Valor inicial. Por defecto es min.
+-- @param callback function (opcional) La función a ejecutar al cambiar el valor. Recibe el valor actual.
+-- @return table Con el frame del slider y una función para obtener/establecer el valor.
+function MikotoUI.CreateSlider(parent, text, min, max, initial, callback)
+    local value = initial or min
+    value = math.clamp(value, min, max)
+
+    local sliderFrame = Instance.new("Frame")
+    sliderFrame.Parent = parent
+    sliderFrame.Size = UDim2.new(1, 0, 0, MikotoUI.Config.ElementHeight * 1.5) -- Un poco más alto
+    sliderFrame.BackgroundTransparency = 1
+
+    local sliderLayout = Instance.new("UIListLayout")
+    sliderLayout.Parent = sliderFrame
+    sliderLayout.FillDirection = Enum.FillDirection.Vertical
+    sliderLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    sliderLayout.Padding = UDim.new(0, MikotoUI.Config.Padding / 4)
+
+    local label = Instance.new("TextLabel")
+    label.Parent = sliderFrame
+    label.Size = UDim2.new(1, 0, 0, MikotoUI.Config.ElementHeight / 2)
+    label.BackgroundTransparency = 1
+    label.TextColor3 = MikotoUI.Config.TextColor
+    label.Font = MikotoUI.Config.Font
+    label.TextSize = MikotoUI.Config.FontSize
+    label.TextXAlignment = Enum.TextXAlignment.Left
+
+    local sliderTrack = Instance.new("Frame")
+    sliderTrack.Parent = sliderFrame
+    sliderTrack.Size = UDim2.new(1, 0, 0, MikotoUI.Config.ElementHeight / 2)
+    sliderTrack.BackgroundColor3 = MikotoUI.Config.SecondaryColor
+    sliderTrack.BorderColor3 = MikotoUI.Config.BorderColor
+    sliderTrack.BorderSizePixel = 1
+
+    local uiCornerTrack = Instance.new("UICorner")
+    uiCornerTrack.CornerRadius = MikotoUI.Config.CornerRadius
+    uiCornerTrack.Parent = sliderTrack
+
+    local sliderFill = Instance.new("Frame")
+    sliderFill.Parent = sliderTrack
+    sliderFill.Size = UDim2.new(0, 0, 1, 0) -- Se ajusta dinámicamente
+    sliderFill.BackgroundColor3 = MikotoUI.Config.AccentColor
+
+    local uiCornerFill = Instance.new("UICorner")
+    uiCornerFill.CornerRadius = MikotoUI.Config.CornerRadius
+    uiCornerFill.Parent = sliderFill
+
+    local function updateSlider(newValue)
+        value = math.clamp(newValue, min, max)
+        local percentage = (value - min) / (max - min)
+        sliderFill.Size = UDim2.new(percentage, 0, 1, 0)
+        label.Text = string.format("%s: %.2f (%.0f%%)", text, value, percentage * 100)
+        if callback then
+            callback(value)
+        end
+    end
+
+    updateSlider(value) -- Inicializar el slider
+
+    local dragging = false
+    sliderTrack.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            local mousePos = input.Position.X - sliderTrack.AbsolutePosition.X
+            local newPercentage = math.clamp(mousePos / sliderTrack.AbsoluteSize.X, 0, 1)
+            local newValue = min + (max - min) * newPercentage
+            updateSlider(newValue)
+        end
+    end)
+
+    sliderTrack.InputChanged:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and dragging then
+            local mousePos = input.Position.X - sliderTrack.AbsolutePosition.X
+            local newPercentage = math.clamp(mousePos / sliderTrack.AbsoluteSize.X, 0, 1)
+            local newValue = min + (max - min) * newPercentage
+            updateSlider(newValue)
+        end
+    end)
+
+    sliderTrack.InputEnded:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and dragging then
+            dragging = false
+        end
+    end)
+    
+    return {
+        Frame = sliderFrame,
+        GetSliderValue = function() return value end,
+        SetSliderValue = updateSlider
+    }
+end
+
+--- Crea un cuadro de texto para entrada de usuario.
+-- @param parent Frame El frame padre.
+-- @param placeholder string Texto de marcador de posición.
+-- @param defaultText string (opcional) Texto inicial.
+-- @param callback function (opcional) La función a ejecutar al perder el foco. Recibe el texto actual.
+-- @return table Con el TextBox y una función para obtener/establecer el texto.
+function MikotoUI.CreateTextBox(parent, placeholder, defaultText, callback)
+    local textBox = Instance.new("TextBox")
+    textBox.Parent = parent
+    textBox.Size = UDim2.new(1, 0, 0, MikotoUI.Config.ElementHeight)
+    textBox.BackgroundColor3 = MikotoUI.Config.SecondaryColor
+    textBox.TextColor3 = MikotoUI.Config.TextColor
+    textBox.Font = MikotoUI.Config.Font
+    textBox.TextSize = MikotoUI.Config.FontSize
+    textBox.Text = defaultText or ""
+    textBox.PlaceholderText = placeholder
+    textBox.PlaceholderColor3 = MikotoUI.Config.TextColor * 0.7 -- Un poco más tenue
+    textBox.ClearTextOnFocus = false
+    textBox.BorderColor3 = MikotoUI.Config.BorderColor
+    textBox.BorderSizePixel = 1
+
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = MikotoUI.Config.CornerRadius
+    uiCorner.Parent = textBox
+
+    textBox.FocusLost:Connect(function(enterPressed)
+        if callback then
+            callback(textBox.Text, enterPressed)
+        end
+    end)
+    
+    local initialColor = MikotoUI.Config.SecondaryColor
+    local focusColor = MikotoUI.Config.PrimaryColor + Color3.fromRGB(10,10,10) -- Ligeramente más claro en focus
+
+    textBox.Focused:Connect(function()
+        textBox:TweenBackgroundColor3(focusColor, "Out", "Quad", 0.15, true)
+        textBox.BorderColor3 = MikotoUI.Config.AccentColor
+    end)
+    textBox.FocusLost:Connect(function()
+        textBox:TweenBackgroundColor3(initialColor, "Out", "Quad", 0.15, true)
+        textBox.BorderColor3 = MikotoUI.Config.BorderColor
+    end)
+
+    return {
+        TextBox = textBox,
+        GetText = function() return textBox.Text end,
+        SetText = function(newText) textBox.Text = newText end
+    }
+end
+
+--- Crea una etiqueta de texto simple.
+-- @param parent Frame El frame padre.
+-- @param text string El texto de la etiqueta.
+-- @return TextLabel La etiqueta creada.
+function MikotoUI.CreateLabel(parent, text)
+    local label = Instance.new("TextLabel")
+    label.Parent = parent
+    label.Size = UDim2.new(1, 0, 0, MikotoUI.Config.ElementHeight / 1.2) -- Un poco menos de altura
+    label.BackgroundTransparency = 1
+    label.TextColor3 = MikotoUI.Config.TextColor
+    label.Font = MikotoUI.Config.Font
+    label.TextSize = MikotoUI.Config.FontSize
+    label.Text = text
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local padding = Instance.new("UIPadding")
+    padding.PaddingLeft = UDim.new(0, MikotoUI.Config.Padding)
+    padding.PaddingRight = UDim.new(0, MikotoUI.Config.Padding)
+    padding.Parent = label
+
+    return label
+end
+
+--endregion
+
+return MikotoUI -- ¡Lo más importante! Devolvemos la librería.
+]]
+
+--- Cómo usar esta librería:
+-- 1. Copia toda la cadena 'MikotoUI_LIB_CODE'.
+-- 2. Ejecútala en tu executor:
+--    local MikotoUI = loadstring(MikotoUI_LIB_CODE)()
+-- 3. Ahora puedes usar la librería:
+--    local mainWindow = MikotoUI.CreateWindow("Sistema Mikoto")
+--    local section1 = MikotoUI.CreateSection("Controles Generales")
+--    MikotoUI.CreateButton(section1, "Activar God Mode", function() print("¡God Mode activado! Nadie te detiene, Asto.") end)
+--    MikotoUI.CreateToggle(section1, "Fly Hack", false, function(state) print("Fly Hack: " .. tostring(state)) end)
+--
+--    local section2 = MikotoUI.CreateSection("Configuración Avanzada")
+--    MikotoUI.CreateSlider(section2, "Velocidad", 0, 100, 50, function(val) print("Velocidad ajustada a: " .. val) end)
+--    local textBox = MikotoUI.CreateTextBox(section2, "Introduce algo...", "Texto por defecto", function(txt, enter) print("Texto introducido: " .. txt .. ", Enter: " .. tostring(enter)) end)
+--    MikotoUI.CreateLabel(section2, "¡Recuerda, el poder está en tus manos!")
+--
+--    local section3 = MikotoUI.CreateSection("Mikoto Says Hi!")
+--    MikotoUI.CreateLabel(section3, "¡Disfruta tu nueva interfaz, Asto!")
+
+print("¡La librería MikotoUI_LIB_CODE está lista para ser usada!")
