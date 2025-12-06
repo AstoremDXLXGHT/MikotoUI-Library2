@@ -204,84 +204,88 @@ function Library:CreateWindow(title)
     MakeDraggable(MainFrame, TopBar)
     
     -- Crear Tab
-    function Window:CreateTab(tabName)
-        tabName = tabName or "Tab"
-        
-        local Tab = {}
-        Tab.Elements = {}
+function Window:CreateTab(tabName)
+    tabName = tabName or "Tab"
+    
+    local Tab = {}
+    Tab.Elements = {}
         
         -- Tab Button
         local TabButton = Instance.new("TextButton")
-        TabButton.Name = tabName
-        TabButton.Size = UDim2.new(1, 0, 0, 35)
-        TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
-        TabButton.Text = tabName
-        TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
-        TabButton.TextSize = 14
-        TabButton.Font = Enum.Font.Gotham
-        TabButton.BorderSizePixel = 0
-        TabButton.Parent = TabContainer
-        
-        local TabButtonCorner = Instance.new("UICorner")
-        TabButtonCorner.CornerRadius = UDim.new(0, 6)
-        TabButtonCorner.Parent = TabButton
+    TabButton.Name = tabName
+    TabButton.Size = UDim2.new(1, 0, 0, 35)
+    TabButton.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+    TabButton.Text = tabName
+    TabButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+    TabButton.TextSize = 14
+    TabButton.Font = Enum.Font.Gotham
+    TabButton.BorderSizePixel = 0
+    TabButton.Parent = TabContainer
+    
+    local TabButtonCorner = Instance.new("UICorner")
+    TabButtonCorner.CornerRadius = UDim.new(0, 6)
+    TabButtonCorner.Parent = TabButton
         
         -- Tab Content
-        local TabContent = Instance.new("ScrollingFrame")
-        TabContent.Name = tabName .. "Content"
-        TabContent.Size = UDim2.new(1, 0, 1, 0)
-        TabContent.BackgroundTransparency = 1
-        TabContent.BorderSizePixel = 0
-        TabContent.ScrollBarThickness = 4
-        TabContent.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 90)
-        TabContent.Visible = false
-        TabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
-        TabContent.Parent = ContentContainer
-        
-        local ContentList = Instance.new("UIListLayout")
-        ContentList.Padding = UDim.new(0, 8)
-        ContentList.Parent = TabContent
-        
-        local ContentPadding = Instance.new("UIPadding")
-        ContentPadding.PaddingTop = UDim.new(0, 5)
-        ContentPadding.PaddingLeft = UDim.new(0, 5)
-        ContentPadding.PaddingRight = UDim.new(0, 5)
-        ContentPadding.Parent = TabContent
-        
-        ContentList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            TabContent.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
-        end)
-        
-        TabButton.MouseButton1Click:Connect(function()
-            for _, tab in pairs(Window.Tabs) do
-                tab.Content.Visible = false
-                Tween(tab.Button, {BackgroundColor3 = Color3.fromRGB(30, 30, 35), TextColor3 = Color3.fromRGB(200, 200, 200)}, 0.2)
-            end
-            
-            TabContent.Visible = true
-            Tween(TabButton, {BackgroundColor3 = Color3.fromRGB(70, 130, 255), TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.2)
-            Window.CurrentTab = Tab
-        end)
-        
-        TabButton.MouseEnter:Connect(function()
-            if Window.CurrentTab ~= Tab then
-                Tween(TabButton, {BackgroundColor3 = Color3.fromRGB(40, 40, 45)}, 0.2)
-            end
-        end)
-        
-        TabButton.MouseLeave:Connect(function()
-            if Window.CurrentTab ~= Tab then
-                Tween(TabButton, {BackgroundColor3 = Color3.fromRGB(30, 30, 35)}, 0.2)
-            end
-        end)
-        
-        Tab.Button = TabButton
-        Tab.Content = TabContent
-        table.insert(Window.Tabs, Tab)
-        
-        if #Window.Tabs == 1 then
-            TabButton.MouseButton1Click:Fire()
+         local TabContent = Instance.new("ScrollingFrame")
+    TabContent.Name = tabName .. "Content"
+    TabContent.Size = UDim2.new(1, 0, 1, 0)
+    TabContent.BackgroundTransparency = 1
+    TabContent.BorderSizePixel = 0
+    TabContent.ScrollBarThickness = 4
+    TabContent.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 90)
+    TabContent.Visible = false
+    TabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+    TabContent.Parent = ContentContainer
+    
+    local ContentList = Instance.new("UIListLayout")
+    ContentList.Padding = UDim.new(0, 8)
+    ContentList.Parent = TabContent
+    
+    local ContentPadding = Instance.new("UIPadding")
+    ContentPadding.PaddingTop = UDim.new(0, 5)
+    ContentPadding.PaddingLeft = UDim.new(0, 5)
+    ContentPadding.PaddingRight = UDim.new(0, 5)
+    ContentPadding.Parent = TabContent
+    
+    ContentList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        TabContent.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 10)
+    end)
+    
+    TabButton.MouseButton1Click:Connect(function()
+        for _, tab in pairs(Window.Tabs) do
+            tab.Content.Visible = false
+            Tween(tab.Button, {BackgroundColor3 = Color3.fromRGB(30, 30, 35), TextColor3 = Color3.fromRGB(200, 200, 200)}, 0.2)
         end
+        
+        TabContent.Visible = true
+        Tween(TabButton, {BackgroundColor3 = Color3.fromRGB(70, 130, 255), TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.2)
+        Window.CurrentTab = Tab
+    end)
+    
+    TabButton.MouseEnter:Connect(function()
+        if Window.CurrentTab ~= Tab then
+            Tween(TabButton, {BackgroundColor3 = Color3.fromRGB(40, 40, 45)}, 0.2)
+        end
+    end)
+    
+    TabButton.MouseLeave:Connect(function()
+        if Window.CurrentTab ~= Tab then
+            Tween(TabButton, {BackgroundColor3 = Color3.fromRGB(30, 30, 35)}, 0.2)
+        end
+    end)
+    
+    Tab.Button = TabButton
+    Tab.Content = TabContent
+    table.insert(Window.Tabs, Tab)
+    
+    -- CORRECCIÓN: Activar el primer tab automáticamente
+    if #Window.Tabs == 1 then
+        -- Simular el click del primer tab
+        TabContent.Visible = true
+        Tween(TabButton, {BackgroundColor3 = Color3.fromRGB(70, 130, 255), TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.2)
+        Window.CurrentTab = Tab
+    end
         
         -- Crear Button
         function Tab:CreateButton(text, callback)
@@ -695,3 +699,4 @@ function Library:CreateWindow(title)
 end
 
 return Library
+
