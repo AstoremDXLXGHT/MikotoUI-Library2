@@ -1,4 +1,3 @@
-```lua
 -- UI Library - Dark Theme with Green Border
 local Library = {}
 
@@ -346,48 +345,3 @@ function Library.CreateLib(title, themeName)
 end
 
 return Library
-```
-
-Esta librería tiene todo lo que pediste:
-
-**Características:**
-- ✅ Color negro de fondo
-- ✅ Bordes verdes (lime/neón)
-- ✅ Textos blancos
-- ✅ Toggles con animación
-- ✅ Botones con hover effect
-- ✅ TextBoxes
-- ✅ Labels
-- ✅ Secciones organizadas
-- ✅ Tabs (pestañas)
-- ✅ Draggable (se puede mover)
-- ✅ ScrollingFrames automáticos
-
-**Uso exactamente como querías:**
-```lua
-local Library = loadstring(game:HttpGet("URL_DE_TU_ARCHIVO"))()
-local Window = Library.CreateLib("MI MENU", "DarkTheme")
-
-local Tab = Window:NewTab("Principal")
-local Section = Tab:NewSection("Funciones")
-
--- Botón
-Section:NewButton("Click Me", "Info del botón", function()
-    print("Botón clickeado!")
-end)
-
--- Toggle
-Section:NewToggle("Auto Farm", "Activa auto farm", false, function(state)
-    print("Toggle:", state)
-end)
-
--- Label
-Section:NewLabel("Este es un texto informativo")
-
--- TextBox
-Section:NewTextBox("Escribe algo...", function(text)
-    print("Texto ingresado:", text)
-end)
-```
-
-¡Listo para usar! 🚀
