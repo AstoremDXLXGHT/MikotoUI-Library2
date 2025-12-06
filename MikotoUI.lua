@@ -255,7 +255,7 @@ function UILibrary:CreateWindow(config)
         tabContent.BorderSizePixel = 0
         tabContent.ScrollBarThickness = 4
         tabContent.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 90)
-        tabContent.Visible = false -- Importante: empieza invisible
+        tabContent.Visible = false 
         tabContent.Parent = contentContainer
 
         local contentLayout = Instance.new("UIListLayout")
@@ -278,15 +278,21 @@ function UILibrary:CreateWindow(config)
         function Tab:UpdateCanvasSize()
             if self.Layout and self.Padding then
                 local contentHeight = self.Layout.AbsoluteContentSize.Y
-                local totalPaddingY = self.Padding.PaddingTop.Offset + self.Padding.PaddingBottom.Offset
-                local layoutPadding = self.Layout.Padding.Offset
-                
-                local calculatedHeight = contentHeight + totalPaddingY + layoutPadding
+                local totalUIPaddingY = self.Padding.PaddingTop.Offset + self.Padding.PaddingBottom.Offset
+                local layoutPadding = self.Layout.Padding.Offset 
 
-                local newCanvasY = math.max(self.Content.AbsoluteSize.Y, calculatedHeight)
+                local calculatedHeight = contentHeight + totalUIPaddingY + (contentHeight > 0 and layoutPadding or 0) + 10 
+
+                local minCanvasHeight = self.Content.AbsoluteSize.Y 
                 
-                print(string.format("[MikotoUI Debug] Tab '%s': Updating CanvasSize. AbsoluteContentSize.Y: %d, TotalPaddingY (SF): %d, LayoutPadding (UL): %d, CalculatedHeight: %d, NewCanvasY: %d, ScrollingFrame.AbsoluteSize.Y: %d", 
-                    self.Name, contentHeight, totalPaddingY, layoutPadding, calculatedHeight, newCanvasY, self.Content.AbsoluteSize.Y))
+                if minCanvasHeight == 0 then
+                    minCanvasHeight = self.Content.Size.Y.Offset
+                end
+
+                local newCanvasY = math.max(minCanvasHeight, calculatedHeight)
+                
+                print(string.format("[MikotoUI Debug] Tab '%s': Updating CanvasSize. Layout.AbsContentSize.Y: %d, SF.UIPaddingY: %d, UL.Padding: %d, CalculatedTargetHeight: %d, SF.AbsSize.Y: %d, Final CanvasSize.Y: %d", 
+                    self.Name, contentHeight, totalUIPaddingY, layoutPadding, calculatedHeight, self.Content.AbsoluteSize.Y, newCanvasY))
                     
                 self.Content.CanvasSize = UDim2.new(0, 0, 0, newCanvasY)
             end
@@ -302,11 +308,21 @@ function UILibrary:CreateWindow(config)
             Window.CurrentTab = Tab
             tween(tabButton, {BackgroundColor3 = Color3.fromRGB(60, 120, 220), TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.2)
             
-            -- Mikoto: Aquí la clave, esperamos un poco más para que el layout se asiente DESPUÉS de hacerse visible.
-            -- A veces un solo task.defer no es suficiente si el padre estaba invisible.
-            task.wait() -- Espera un frame
-            task.wait() -- Espera un segundo frame para mayor seguridad
-            task.defer(function()
+            task.spawn(function()
+                task.wait() 
+                task.wait() 
+                
+                local retries = 0
+                local maxRetries = 20 
+                local contentHeight = Tab.Layout.AbsoluteContentSize.Y
+                
+                while contentHeight == 0 and retries < maxRetries do
+                    print(string.format("[MikotoUI Debug] Tab '%s': Waiting for AbsoluteContentSize.Y to be > 0 (currently %d)... Retry %d", Tab.Name, contentHeight, retries + 1))
+                    task.wait(0.05) 
+                    contentHeight = Tab.Layout.AbsoluteContentSize.Y 
+                    retries = retries + 1
+                end
+
                 Tab:UpdateCanvasSize()
             end)
         end)
@@ -636,7 +652,8 @@ function UILibrary:CreateWindow(config)
 
         -- Seleccionar la primera pestaña automáticamente
         if #Window.Tabs == 1 then
-            tabButton.MouseButton1Click:Fire() 
+            -- Mikoto: ¡CORRECCIÓN CRÍTICA! Usamos :Click() en lugar de :Fire()
+            tabButton:Click() 
         end
 
         return Tab
