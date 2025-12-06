@@ -13,7 +13,7 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
-local Players = game:GetService("Players") -- Mikoto: Añadimos Players para un acceso más limpio a LocalPlayer
+local Players = game:GetService("Players") 
 
 -- Utilidades (mis herramientas favoritas)
 local function tween(object, properties, duration)
@@ -27,7 +27,7 @@ local function makeDraggable(frame, dragHandle)
     local dragging = false
     local dragInput, mousePos, framePos
 
-    dragHandle = dragHandle or frame -- Si no se especifica un handle, el frame completo es el handle
+    dragHandle = dragHandle or frame 
 
     dragHandle.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -35,7 +35,6 @@ local function makeDraggable(frame, dragHandle)
             mousePos = input.Position
             framePos = frame.Position
 
-            -- Mikoto: Conectamos a input.Changed para saber cuándo el usuario deja de presionar
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -54,13 +53,11 @@ local function makeDraggable(frame, dragHandle)
         if input == dragInput and dragging then
             local delta = input.Position - mousePos
             
-            -- Mikoto: Calculamos la nueva posición con el delta
             local newPosX = framePos.X.Scale
             local newOffsetX = framePos.X.Offset + delta.X
             local newPosY = framePos.Y.Scale
             local newOffsetY = framePos.Y.Offset + delta.Y
 
-            -- Mikoto: Suavizamos el movimiento con un pequeño tween para una mejor sensación
             tween(frame, {
                 Position = UDim2.new(
                     newPosX,
@@ -85,20 +82,17 @@ function UILibrary:CreateWindow(config)
     screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     screenGui.ResetOnSpawn = false
 
-    -- Proteger GUI si es posible (siempre con un pcall para estar seguras)
     pcall(function()
         screenGui.Parent = CoreGui
     end)
 
     if screenGui.Parent ~= CoreGui then
-        -- Mikoto: Si no se pudo parentar a CoreGui, buscamos PlayerGui.
-        -- Es buena práctica esperar por PlayerGui por si no está inmediatamente disponible.
         local player = Players.LocalPlayer
         if player then
             screenGui.Parent = player:WaitForChild("PlayerGui")
         else
             warn("MikotoUI: No se pudo encontrar LocalPlayer para parentar ScreenGui.")
-            return nil -- Fallback en caso de problemas graves
+            return nil 
         end
     end
 
@@ -122,11 +116,11 @@ function UILibrary:CreateWindow(config)
     shadow.Position = UDim2.new(0, -15, 0, -15)
     shadow.Size = UDim2.new(1, 30, 1, 30)
     shadow.ZIndex = 0
-    shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png" -- Mikoto: Considera una imagen de sombra real para un look pro
+    shadow.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png" 
     shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
     shadow.ImageTransparency = 0.5
-    shadow.ScaleType = Enum.ScaleType.Slice -- Mikoto: Mejor para sombras para que escalen bien
-    shadow.SliceCenter = Rect.new(10, 10, 10, 10) -- Mikoto: Ajustar según tu imagen de sombra 9-slice
+    shadow.ScaleType = Enum.ScaleType.Slice 
+    shadow.SliceCenter = Rect.new(10, 10, 10, 10) 
     shadow.Parent = mainFrame
 
     -- Barra de título
@@ -137,7 +131,6 @@ function UILibrary:CreateWindow(config)
     titleBar.BorderSizePixel = 0
     titleBar.Parent = mainFrame
 
-    -- Mikoto: UICorner para la barra de título, para que coincida con el frame principal
     local titleCorner = Instance.new("UICorner")
     titleCorner.CornerRadius = UDim.new(0, 8)
     titleCorner.Parent = titleBar
@@ -172,13 +165,12 @@ function UILibrary:CreateWindow(config)
     closeCorner.Parent = closeButton
 
     closeButton.MouseButton1Click:Connect(function()
-        -- Mikoto: Animación de cierre más centrada y moderna
         tween(mainFrame, {
             Size = UDim2.new(0, 0, 0, 0),
             Position = UDim2.new(mainFrame.Position.X.Scale + mainFrame.Size.X.Scale / 2, mainFrame.Position.X.Offset + mainFrame.Size.X.Offset / 2,
                                   mainFrame.Position.Y.Scale + mainFrame.Size.Y.Scale / 2, mainFrame.Position.Y.Offset + mainFrame.Size.Y.Offset / 2)
         }, 0.3)
-        task.wait(0.3) -- Mikoto: Usamos task.wait, más moderno
+        task.wait(0.3) 
         screenGui:Destroy()
     end)
 
@@ -227,7 +219,7 @@ function UILibrary:CreateWindow(config)
 
     -- Animación de entrada
     mainFrame.Size = UDim2.new(0, 0, 0, 0)
-    mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0) -- Mikoto: Iniciamos desde el centro para una expansión suave
+    mainFrame.Position = UDim2.new(0.5, 0, 0.5, 0) 
     tween(mainFrame, {Size = windowSize, Position = UDim2.new(0.5, -windowSize.X.Offset/2, 0.5, -windowSize.Y.Offset/2)}, 0.4)
 
     local Window = {}
@@ -263,7 +255,7 @@ function UILibrary:CreateWindow(config)
         tabContent.BorderSizePixel = 0
         tabContent.ScrollBarThickness = 4
         tabContent.ScrollBarImageColor3 = Color3.fromRGB(80, 80, 90)
-        tabContent.Visible = false
+        tabContent.Visible = false -- Importante: empieza invisible
         tabContent.Parent = contentContainer
 
         local contentLayout = Instance.new("UIListLayout")
@@ -279,22 +271,23 @@ function UILibrary:CreateWindow(config)
 
         Tab.Button = tabButton
         Tab.Content = tabContent
-        Tab.Layout = contentLayout -- Mikoto: Guardamos la referencia para fácil acceso
-        Tab.Padding = contentPadding -- Mikoto: Guardamos la referencia para fácil acceso
+        Tab.Layout = contentLayout 
+        Tab.Padding = contentPadding 
 
-        -- Mikoto: Función para actualizar el CanvasSize de la pestaña (¡la clave de la solución!)
+        -- Mikoto: Función para actualizar el CanvasSize de la pestaña (¡con prints de depuración!)
         function Tab:UpdateCanvasSize()
             if self.Layout and self.Padding then
-                -- La altura del contenido según el UIListLayout
                 local contentHeight = self.Layout.AbsoluteContentSize.Y
-
-                -- Sumamos el padding de la ScrollingFrame
                 local totalPaddingY = self.Padding.PaddingTop.Offset + self.Padding.PaddingBottom.Offset
+                local layoutPadding = self.Layout.Padding.Offset
                 
-                -- Mikoto: El CanvasSize debe ser al menos tan grande como el ScrollingFrame,
-                -- o el tamaño del contenido + padding + un pequeño buffer.
-                -- Esto asegura que la barra de desplazamiento solo aparezca cuando sea necesario.
-                local newCanvasY = math.max(self.Content.AbsoluteSize.Y, contentHeight + totalPaddingY + self.Layout.Padding.Offset)
+                local calculatedHeight = contentHeight + totalPaddingY + layoutPadding
+
+                local newCanvasY = math.max(self.Content.AbsoluteSize.Y, calculatedHeight)
+                
+                print(string.format("[MikotoUI Debug] Tab '%s': Updating CanvasSize. AbsoluteContentSize.Y: %d, TotalPaddingY (SF): %d, LayoutPadding (UL): %d, CalculatedHeight: %d, NewCanvasY: %d, ScrollingFrame.AbsoluteSize.Y: %d", 
+                    self.Name, contentHeight, totalPaddingY, layoutPadding, calculatedHeight, newCanvasY, self.Content.AbsoluteSize.Y))
+                    
                 self.Content.CanvasSize = UDim2.new(0, 0, 0, newCanvasY)
             end
         end
@@ -309,7 +302,10 @@ function UILibrary:CreateWindow(config)
             Window.CurrentTab = Tab
             tween(tabButton, {BackgroundColor3 = Color3.fromRGB(60, 120, 220), TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.2)
             
-            -- Mikoto: Actualizamos el CanvasSize al seleccionar la pestaña
+            -- Mikoto: Aquí la clave, esperamos un poco más para que el layout se asiente DESPUÉS de hacerse visible.
+            -- A veces un solo task.defer no es suficiente si el padre estaba invisible.
+            task.wait() -- Espera un frame
+            task.wait() -- Espera un segundo frame para mayor seguridad
             task.defer(function()
                 Tab:UpdateCanvasSize()
             end)
@@ -342,6 +338,7 @@ function UILibrary:CreateWindow(config)
             button.TextSize = 14
             button.Font = Enum.Font.Gotham
             button.Parent = tabContent
+            print(string.format("[MikotoUI Debug] Added Button '%s' to tab '%s'", buttonText, self.Name))
 
             local btnCorner = Instance.new("UICorner")
             btnCorner.CornerRadius = UDim.new(0, 6)
@@ -357,7 +354,6 @@ function UILibrary:CreateWindow(config)
                 tween(button, {BackgroundColor3 = Color3.fromRGB(50, 50, 60)}, 0.2)
             end)
 
-            -- Mikoto: Actualizamos CanvasSize de forma asíncrona
             task.defer(function()
                 self:UpdateCanvasSize()
             end)
@@ -377,6 +373,7 @@ function UILibrary:CreateWindow(config)
             toggleFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
             toggleFrame.BorderSizePixel = 0
             toggleFrame.Parent = tabContent
+            print(string.format("[MikotoUI Debug] Added Toggle '%s' to tab '%s'", toggleText, self.Name))
 
             local toggleCorner = Instance.new("UICorner")
             toggleCorner.CornerRadius = UDim.new(0, 6)
@@ -432,7 +429,6 @@ function UILibrary:CreateWindow(config)
                 callback(toggled)
             end)
 
-            -- Mikoto: Actualizamos CanvasSize de forma asíncrona
             task.defer(function()
                 self:UpdateCanvasSize()
             end)
@@ -449,7 +445,7 @@ function UILibrary:CreateWindow(config)
                 callback(value)
             end
 
-            function Toggle:Get() -- Mikoto: Añadimos un getter para obtener el estado actual
+            function Toggle:Get() 
                 return toggled
             end
 
@@ -470,6 +466,7 @@ function UILibrary:CreateWindow(config)
             sliderFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
             sliderFrame.BorderSizePixel = 0
             sliderFrame.Parent = tabContent
+            print(string.format("[MikotoUI Debug] Added Slider '%s' to tab '%s'", sliderText, self.Name))
 
             local sliderCorner = Instance.new("UICorner")
             sliderCorner.CornerRadius = UDim.new(0, 6)
@@ -539,15 +536,13 @@ function UILibrary:CreateWindow(config)
                 local trackAbsPos = sliderTrack.AbsolutePosition.X
                 local trackAbsSizeX = sliderTrack.AbsoluteSize.X
 
-                -- Mikoto: Calculamos la posición relativa dentro de la barra
                 local pos = math.clamp((xPos - trackAbsPos) / trackAbsSizeX, 0, 1)
 
                 currentValue = math.floor(min + (max - min) * pos)
-                currentValue = math.clamp(currentValue, min, max) -- Aseguramos que esté dentro de los límites
+                currentValue = math.clamp(currentValue, min, max) 
 
                 valueLabel.Text = tostring(currentValue)
 
-                -- Mikoto: Recalculamos 'pos' basada en el currentValue real para que encaje con los pasos
                 local actualPos = (currentValue - min) / (max - min)
                 tween(sliderFill, {Size = UDim2.new(actualPos, 0, 1, 0)}, 0.1)
                 tween(sliderButton, {Position = UDim2.new(actualPos, -7, 0.5, -7)}, 0.1)
@@ -557,7 +552,7 @@ function UILibrary:CreateWindow(config)
 
             sliderButton.MouseButton1Down:Connect(function()
                 dragging = true
-                UserInputService.MouseIconEnabled = false -- Mikoto: Esconder el cursor para una mejor experiencia de arrastre
+                UserInputService.MouseIconEnabled = false 
             end)
 
             UserInputService.InputEnded:Connect(function(input)
@@ -576,12 +571,11 @@ function UILibrary:CreateWindow(config)
             sliderTrack.InputBegan:Connect(function(input)
                 if input.UserInputType == Enum.UserInputType.MouseButton1 then
                     updateSlider(input)
-                    dragging = true -- Mikoto: Permite arrastrar inmediatamente después de hacer clic en la pista
+                    dragging = true 
                     UserInputService.MouseIconEnabled = false
                 end
             end)
 
-            -- Mikoto: Actualizamos CanvasSize de forma asíncrona
             task.defer(function()
                 self:UpdateCanvasSize()
             end)
@@ -596,7 +590,7 @@ function UILibrary:CreateWindow(config)
                 callback(currentValue)
             end
 
-            function Slider:Get() -- Mikoto: Añadimos un getter
+            function Slider:Get() 
                 return currentValue
             end
 
@@ -607,7 +601,7 @@ function UILibrary:CreateWindow(config)
         function Tab:AddLabel(text)
             local label = Instance.new("TextLabel")
             label.Name = "Label"
-            label.Size = UDim2.new(1, -10, 0, 30) -- Mikoto: Tamaño inicial, AutomaticSize lo ajustará
+            label.Size = UDim2.new(1, -10, 0, 30) 
             label.BackgroundTransparency = 1
             label.Text = text
             label.TextColor3 = Color3.fromRGB(200, 200, 200)
@@ -615,10 +609,10 @@ function UILibrary:CreateWindow(config)
             label.Font = Enum.Font.Gotham
             label.TextXAlignment = Enum.TextXAlignment.Left
             label.TextWrapped = true
-            label.AutomaticSize = Enum.AutomaticSize.Y -- Mikoto: Permite que el texto ajuste su altura automáticamente
+            label.AutomaticSize = Enum.AutomaticSize.Y 
             label.Parent = tabContent
+            print(string.format("[MikotoUI Debug] Added Label '%s' to tab '%s'", text, self.Name))
 
-            -- Mikoto: Actualizamos CanvasSize de forma asíncrona
             task.defer(function()
                 self:UpdateCanvasSize()
             end)
@@ -626,14 +620,12 @@ function UILibrary:CreateWindow(config)
             local Label = {}
             function Label:Set(newText)
                 label.Text = newText
-                -- Mikoto: Si el texto cambia y AutomaticSize.Y está activado, la altura podría cambiar.
-                -- Necesitamos re-deferir la actualización del CanvasSize.
                 task.defer(function()
                     self:UpdateCanvasSize()
                 end)
             end
 
-            function Label:Get() -- Mikoto: Añadimos un getter
+            function Label:Get() 
                 return label.Text
             end
 
@@ -644,13 +636,10 @@ function UILibrary:CreateWindow(config)
 
         -- Seleccionar la primera pestaña automáticamente
         if #Window.Tabs == 1 then
-            tabButton.MouseButton1Click:Fire() -- Mikoto: Usamos Fire() para activarla inmediatamente
+            tabButton.MouseButton1Click:Fire() 
         end
 
         return Tab
     end
 
-    return Window
-end
-
-return UILibrary
+    return UILibrary
