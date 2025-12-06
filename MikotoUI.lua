@@ -174,7 +174,8 @@ function MikotoUI.CreateLib(menuName)
     local InfoContainer = Instance.new("TextLabel")
     InfoContainer.Name = "InfoTip"
     InfoContainer.Parent = MainMenuFrame -- Position within the main menu frame
-    InfoContainer.BackgroundColor3 = Color3.fromRGB(currentTheme.SchemeColor.R0.5, currentTheme.SchemeColor.G0.5, currentTheme.SchemeColor.B*0.5) -- A darker scheme color
+    -- CORRECCIÓN: Faltaban operadores de multiplicación '*'
+    InfoContainer.BackgroundColor3 = Color3.fromRGB(currentTheme.SchemeColor.R  0.5, currentTheme.SchemeColor.G  0.5, currentTheme.SchemeColor.B * 0.5) -- A darker scheme color
     InfoContainer.TextColor3 = currentTheme.TextColor
     InfoContainer.Font = Enum.Font.Gotham
     InfoContainer.TextSize = 12
@@ -326,7 +327,7 @@ function MikotoUI.CreateLib(menuName)
         contentLayout.Padding = UDim.new(0, 3)
         contentLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
         contentLayout.FillDirection = Enum.FillDirection.Vertical
-        
+                
         local isCollapsed = initiallyCollapsed
 
         local function updateSectionFrameSize()
@@ -397,7 +398,8 @@ function MikotoUI.CreateLib(menuName)
             local hoverTween
             btn.MouseEnter:Connect(function()
                 if hoverTween then hoverTween:Cancel() end
-                hoverTween = Utility:TweenObject(btn, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R255 + 10, currentTheme.ElementColor.G255 + 10, currentTheme.ElementColor.B*255 + 10)}, 0.1)
+                -- CORRECCIÓN: Faltaban operadores de multiplicación '*'
+                hoverTween = Utility:TweenObject(btn, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R  255 + 10, currentTheme.ElementColor.G  255 + 10, currentTheme.ElementColor.B * 255 + 10)}, 0.1)
                 showInfoTip(tipInf)
             end)
             btn.MouseLeave:Connect(function()
@@ -466,7 +468,8 @@ function MikotoUI.CreateLib(menuName)
 
             toggle.MouseEnter:Connect(function()
                 if hoverTween then hoverTween:Cancel() end
-                hoverTween = Utility:TweenObject(toggle, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R255 + 10, currentTheme.ElementColor.G255 + 10, currentTheme.ElementColor.B*255 + 10)}, 0.1)
+                -- CORRECCIÓN: Faltaban operadores de multiplicación '*'
+                hoverTween = Utility:TweenObject(toggle, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R  255 + 10, currentTheme.ElementColor.G  255 + 10, currentTheme.ElementColor.B * 255 + 10)}, 0.1)
                 showInfoTip(tipInf)
             end)
             toggle.MouseLeave:Connect(function()
@@ -569,7 +572,8 @@ function MikotoUI.CreateLib(menuName)
             local hoverTween
             textboxContainer.MouseEnter:Connect(function()
                 if hoverTween then hoverTween:Cancel() end
-                hoverTween = Utility:TweenObject(textboxContainer, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R255 + 10, currentTheme.ElementColor.G255 + 10, currentTheme.ElementColor.B*255 + 10)}, 0.1)
+                -- CORRECCIÓN: Faltaban operadores de multiplicación '*'
+                hoverTween = Utility:TweenObject(textboxContainer, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R  255 + 10, currentTheme.ElementColor.G  255 + 10, currentTheme.ElementColor.B * 255 + 10)}, 0.1)
                 showInfoTip(tipInf)
             end)
             textboxContainer.MouseLeave:Connect(function()
@@ -703,7 +707,8 @@ function MikotoUI.CreateLib(menuName)
             local hoverTween
             sliderContainer.MouseEnter:Connect(function()
                 if hoverTween then hoverTween:Cancel() end
-                hoverTween = Utility:TweenObject(sliderContainer, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R255 + 10, currentTheme.ElementColor.G255 + 10, currentTheme.ElementColor.B*255 + 10)}, 0.1)
+                -- CORRECCIÓN: Faltaban operadores de multiplicación '*'
+                hoverTween = Utility:TweenObject(sliderContainer, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R  255 + 10, currentTheme.ElementColor.G  255 + 10, currentTheme.ElementColor.B * 255 + 10)}, 0.1)
                 showInfoTip(tipInf)
             end)
             sliderContainer.MouseLeave:Connect(function()
@@ -813,7 +818,8 @@ function MikotoUI.CreateLib(menuName)
                 local hoverTween
                 optionBtn.MouseEnter:Connect(function()
                     if hoverTween then hoverTween:Cancel() end
-                    hoverTween = Utility:TweenObject(optionBtn, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R255 + 15, currentTheme.ElementColor.G255 + 15, currentTheme.ElementColor.B*255 + 15)}, 0.1)
+                    -- CORRECCIÓN: Faltaban operadores de multiplicación '*'
+                    hoverTween = Utility:TweenObject(optionBtn, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R  255 + 15, currentTheme.ElementColor.G  255 + 15, currentTheme.ElementColor.B * 255 + 15)}, 0.1)
                 end)
                 optionBtn.MouseLeave:Connect(function()
                     if hoverTween then hoverTween:Cancel() end
@@ -851,7 +857,8 @@ function MikotoUI.CreateLib(menuName)
             local hoverTweenBtn
             dropdownContainer.MouseEnter:Connect(function()
                 if hoverTweenBtn then hoverTweenBtn:Cancel() end
-                hoverTweenBtn = Utility:TweenObject(dropdownButton, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R255 + 10, currentTheme.ElementColor.G255 + 10, currentTheme.ElementColor.B*255 + 10)}, 0.1)
+                -- CORRECCIÓN: Faltaban operadores de multiplicación '*'
+                hoverTweenBtn = Utility:TweenObject(dropdownButton, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R  255 + 10, currentTheme.ElementColor.G  255 + 10, currentTheme.ElementColor.B * 255 + 10)}, 0.1)
                 showInfoTip(tipInf)
             end)
             dropdownContainer.MouseLeave:Connect(function()
@@ -922,7 +929,8 @@ function MikotoUI.CreateLib(menuName)
             local hoverTween
             keybindContainer.MouseEnter:Connect(function()
                 if hoverTween then hoverTween:Cancel() end
-                hoverTween = Utility:TweenObject(keybindContainer, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R255 + 10, currentTheme.ElementColor.G255 + 10, currentTheme.ElementColor.B*255 + 10)}, 0.1)
+                -- CORRECCIÓN: Faltaban operadores de multiplicación '*'
+                hoverTween = Utility:TweenObject(keybindContainer, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R  255 + 10, currentTheme.ElementColor.G  255 + 10, currentTheme.ElementColor.B * 255 + 10)}, 0.1)
                 showInfoTip(tipInf)
             end)
             keybindContainer.MouseLeave:Connect(function()
@@ -1035,7 +1043,7 @@ function MikotoUI.CreateLib(menuName)
             local panelCorner = Instance.new("UICorner")
             panelCorner.CornerRadius = UDim.new(0, 4)
             panelCorner.Parent = colorPanel
-            
+                        
             local colorPickerOpened = false
             local currentColor = defaultColor or Color3.fromRGB(255,255,255)
 
@@ -1053,7 +1061,7 @@ function MikotoUI.CreateLib(menuName)
             hueSliderBG.BackgroundTransparency = 1
             hueSliderBG.Size = UDim2.new(0.9, 0, 0, 15)
             hueSliderBG.Position = UDim2.new(0.05, 0, 0.1, 0)
-            
+                        
             local hueGradient = Instance.new("UIGradient")
             hueGradient.Color = ColorSequence.new{
                 ColorSequenceKeypoint.new(0, Color3.fromHSV(0,1,1)),
@@ -1151,8 +1159,7 @@ function MikotoUI.CreateLib(menuName)
                     end
                 end)
             end)
-
-
+              
             local function toggleColorPanel()
                 colorPickerOpened = not colorPickerOpened
                 local targetHeight = colorPickerOpened and 120 or 0
@@ -1167,7 +1174,8 @@ function MikotoUI.CreateLib(menuName)
             local hoverTweenBtn
             colorPickerContainer.MouseEnter:Connect(function()
                 if hoverTweenBtn then hoverTweenBtn:Cancel() end
-                hoverTweenBtn = Utility:TweenObject(colorPickerButton, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R255 + 10, currentTheme.ElementColor.G255 + 10, currentTheme.ElementColor.B*255 + 10)}, 0.1)
+                -- CORRECCIÓN: Faltaban operadores de multiplicación '*'
+                hoverTweenBtn = Utility:TweenObject(colorPickerButton, {BackgroundColor3 = Color3.fromRGB(currentTheme.ElementColor.R  255 + 10, currentTheme.ElementColor.G  255 + 10, currentTheme.ElementColor.B * 255 + 10)}, 0.1)
                 showInfoTip(tipInf)
             end)
             colorPickerContainer.MouseLeave:Connect(function()
@@ -1207,7 +1215,6 @@ function MikotoUI.CreateLib(menuName)
             }
         end
 
-
         -- Return Elements interface for this section
         sectionFunctions.Elements = Elements
         return sectionFunctions
@@ -1218,4 +1225,3 @@ function MikotoUI.CreateLib(menuName)
 end
 
 return MikotoUI
-
