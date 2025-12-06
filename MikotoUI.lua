@@ -1,21 +1,9 @@
---[[
-    Modern UI Library for Roblox
-    Usage: loadstring(game:HttpGet("YOUR_RAW_GITHUB_URL"))()
-    
-    Example:
-    local Library = loadstring(game:HttpGet("YOUR_URL"))()
-    local Window = Library:CreateWindow("My Script")
-    local Tab = Window:CreateTab("Main")
-    Tab:CreateButton("Click Me", function() print("Clicked!") end)
-]]
-
 local Library = {}
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 
--- Utilidades
 local function Tween(object, properties, duration)
     duration = duration or 0.3
     local tween = TweenService:Create(object, TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), properties)
@@ -56,7 +44,6 @@ local function MakeDraggable(frame, dragFrame)
     end)
 end
 
--- Función para crear ventana principal
 function Library:CreateWindow(title)
     title = title or "UI Library"
     
@@ -64,12 +51,13 @@ function Library:CreateWindow(title)
     Window.Tabs = {}
     Window.CurrentTab = nil
     
-    -- ScreenGui
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ModernUILibrary"
     ScreenGui.ResetOnSpawn = false
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
+        Window.ScreenGui = ScreenGui
+
     -- Protección contra detección
     if syn and syn.protect_gui then
         syn.protect_gui(ScreenGui)
@@ -699,4 +687,5 @@ function Window:CreateTab(tabName)
 end
 
 return Library
+
 
