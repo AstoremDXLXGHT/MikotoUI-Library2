@@ -547,7 +547,7 @@ function UILibrary:CreateWindow(config)
         
         -- Seleccionar la primera pestaña automáticamente
         if #Window.Tabs == 1 then
-            tabButton.MouseButton1Click:Fire()
+            tabButton:Click()
         end
         
         return Tab
@@ -557,3 +557,4 @@ function UILibrary:CreateWindow(config)
 end
 
 return UILibrary
+
