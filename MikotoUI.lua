@@ -1,9 +1,9 @@
 --[[
   Mikoto Delight UI Library
-  Desarrollado por Mikoto Delight - Tu scripter y exploiter de confianza.
+  Desarrollado por Astorem DXLXGHT
 
   Uso:
-  local MikotoDelight = require(path.to.this.script)
+  local MikotoDelight = loadstring(game:HttpGet("URL_DE_TU_LIBRERIA_AQUI"))()
   local UI = MikotoDelight.CreateLib("Mi Fabuloso Menu")
 
   local Tab1 = UI:NewSection("Configuracion General")
@@ -1030,14 +1030,14 @@ function Mikoto.CreateLib(name, initialPosition)
                         end
                     end)
                 end
-            end)
+            })
 
             local keybindConnection
             keybindConnection = UserInputService.InputBegan:Connect(function(input, gameProcessedEvent)
                 if not gameProcessedEvent and input.KeyCode == currentKey then
                     if callback then pcall(callback) end
                 end
-            end)
+            })
 
             local keybindFunctions = {
                 GetKey = function() return currentKey end,
@@ -1215,7 +1215,7 @@ function Mikoto.CreateLib(name, initialPosition)
                     ColorPaletteFrame.Visible = false
                     updateSectionSize()
                 end
-            end)
+            })
 
             local colorPickerFunctions = {
                 GetColor = function() return CurrentColorDisplay.BackgroundColor3 end,
@@ -1232,10 +1232,9 @@ function Mikoto.CreateLib(name, initialPosition)
             return colorPickerFunctions
         end
 
-        return Elements -- Devolver el objeto Elements para añadir controles a la sección
+        return Elements 
     end
-    
-    -- Función para destruir la interfaz gráfica
+
     PageObject.Destroy = function()
         if ScreenGui then
             ScreenGui:Destroy()
@@ -1245,7 +1244,7 @@ function Mikoto.CreateLib(name, initialPosition)
         end
     end
 
-    return PageObject -- Devolver el objeto PageObject para añadir secciones
+    return PageObject
 end
 
 return Mikoto
